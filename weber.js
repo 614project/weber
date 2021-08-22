@@ -36,5 +36,9 @@ const weber = (text) => {
     }
     //기본적인 변수
     stack = [];
-    
+    num = 0;
+    //시작
+    //while (num < text.length) {
+    //
+    //}
 }
