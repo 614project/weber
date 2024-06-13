@@ -1,17 +1,96 @@
 import fs from 'fs';
 
 class Weber {
-    static Compile(path:string) {
+    static Compile(path:string):string {
         let compiler = new WeberCompiler(fs.readFileSync(path).toString());
-    } 
+        return compiler.Run();
+    }
 }
 
 /**weber 코드를 HTML로 변환해주는 컴파일러 */
 class WeberCompiler {
     weber_code:string;
+    content = new ContentManager();
     constructor(code:string) {
-        
+        this.weber_code = code.trim();
     }
+    Run():string {
+        return this.#Parsing().ToString(this.content);
+    }
+    #Now() {
+        return this.weber_code[this.#index];
+    }
+    #index = 0;
+    #Parsing() : Tag {
+        let html = new Tag("html");
+        this.#index = 0;
+
+        return html;
+    }
+    #Parser() : Tag|Property|Style {
+        //이름 가져오기
+        let name:string = (() => {
+            let start = this.#index
+            //더이상 특수문자가 없을때까지 index 증가
+            while(!this.#Now().includes("\n!@#$%^&*()_+\\-=[]{};':\"|,.<>/?'")) {
+                ++this.#index;
+            }
+            return this.weber_code.substring(start,this.#index-1);
+        })();
+
+        //띄어쓰기는 모두 스킵
+        while(this.#Now() != " ") {
+            this.#index++;
+        }
+        //만약 쌍점이라면, 간결한 태그 생성
+        if (this.#Now() == ":") {
+            //빠르게 태그 만들고 끝
+            return new Tag(name,this.#Text());
+        }
+        //중괄호라면, 일단 태그는 맞음 와 귀차나..
+    }
+    /** 텍스트 읽기 */
+    #Text() : string {
+        while(this.#Now() != " ") {
+            this.#index++;
+        }
+        let text = "";
+        const open = this.#Now();
+        //큰따옴표, 작은따옴표 둘다 아니라면... 뭐냐?
+        if (open != "'" && open != '"') {
+            throw this.#Error("문자열은 따옴표로 양옆을 감싸야 합니다.");
+        }
+        //다시 닫힐때까지 파싱
+        for(this.#index++;this.#Now() != open;this.#index++) {
+            if (this.#Now() == '\n') {
+                throw this.#Error("문자열은 따옴표로 끝나야만 합니다.");
+            }
+            if (this.#Now() == '\\') {
+                this.#index++;
+                if (this.#Now() == 'n') {
+                    text += '\n';
+                    continue;
+                }
+            }
+            text += this.#Now();
+        }
+        //끝
+        return text;
+    }
+    #Error(message) : string {
+        return `Weber Error. (${this.#index}번째 글자) ${message}`;
+    }
+
+    /** 존재하는 HTML 태그 목록 <태그명, 콘텐츠 포함 여부> */
+    static HTML_Tag = new Map<string,boolean>([
+        ["h1",true], ["h2",true], ["h3",true], ["h4",true], ["h5",true], ["h6",true],
+        ["p",true], ["b",true], ["s",true], ["div",true],
+        ["body",true], ["head",true],
+        ["br",false], ["img",false]
+    ]);
+    static Style_Option = new Map<string,boolean>([
+
+    ]);
 }
 
 /**콘텐츠 관리자 */
@@ -51,7 +130,6 @@ class StyleManager {
 
     }
 }
-
 /**프로퍼티 (id, autoplay 등) */
 class Property {
     Name:string;
@@ -86,15 +164,14 @@ class Tag extends Property {
     override ToString(content:ContentManager): string {
         //아이디 존재여부 확인 및 생성
         this.Id ??= content.CreateID();
-
         //스타일 추가
         content.Style_Manager.Add('#'+this.Id, this.Styles);
         //자바스크립트 추가
-        this.Event.forEach((v,k) => {
-            content.JS_Manager.Add(v);
-            //속성 추가해야되는데... 이따가 해야지
+        this.Event.forEach((v,k) => { //v: 스크립트, k: 이벤트 이름
+            let name = content.JS_Manager.Add(v);
+            //해당 함수를 호출하는 이벤트 속성 추가
+            this.Propertys.push(new Property(k,`${name}()`)); // onclick="_weber_function_0_()";
         });
-
         //문자열로 변환
         if (this.Value == null) {
             return `<${this.Name}/>`
@@ -102,3 +179,7 @@ class Tag extends Property {
         return `<${this.Name}>${this.Value??""}</${this.Name}>`;
     }
 }
+
+
+//테스트
+console.log(Weber.Compile("test.txt"));
