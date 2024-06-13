@@ -1,0 +1,27 @@
+{
+  "name": "weber",
+  "version": "1.0.0",
+  "description": "simple language for web. weber project.",
+  "main": "weber.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": "git+https://github.com/614project/weber.git",
+  "keywords": [
+    "complier"
+  ],
+  "author": "614project",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/614project/weber/issues"
+  },
+  "homepage": "https://github.com/614project/weber#readme",
+  "dependencies": {
+    "fs": "^0.0.1-security",
+    "tsc": "^2.0.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.2",
+    "typescript": "^5.4.5"
+  }
+}
