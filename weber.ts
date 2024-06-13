@@ -92,6 +92,7 @@ class Tag extends Property {
         //자바스크립트 추가
         this.Event.forEach((v,k) => {
             content.JS_Manager.Add(v);
+            //속성 추가해야되는데... 이따가 해야지
         });
 
         //문자열로 변환
