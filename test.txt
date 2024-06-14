@@ -1,6 +1,0 @@
-head {
-    title: "weber"
-}
-body {
-    h1: "hello world!"
-}

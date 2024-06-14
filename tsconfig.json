@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "CommonJS",
+        "noImplicitAny": true,
+        "strictNullChecks": true,
+        "strict": true,
+        "esModuleInterop": true
+    },
+    "include": [
+        "weber.ts"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}

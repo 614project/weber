@@ -1,8 +1,9 @@
-import fs from 'fs';
+import { readFileSync } from "fs";
+import { arrayBuffer } from "stream/consumers";
 
 class Weber {
     static Compile(path:string):string {
-        let compiler = new WeberCompiler(fs.readFileSync(path).toString());
+        let compiler = new WeberCompiler(readFileSync(path).toString());
         return compiler.Run();
     }
 }
@@ -18,6 +19,9 @@ class WeberCompiler {
         return this.#Parsing().ToString(this.content);
     }
     #Now() {
+        if (this.#index >= this.weber_code.length) {
+            throw this.#Error("요소의 끝이 존재하지 않습니다.");
+        }
         return this.weber_code[this.#index];
     }
     #index = 0;
@@ -32,28 +36,27 @@ class WeberCompiler {
         let name:string = (() => {
             let start = this.#index
             //더이상 특수문자가 없을때까지 index 증가
-            while(!this.#Now().includes("\n!@#$%^&*()_+\\-=[]{};':\"|,.<>/?'")) {
+            while(!WeberCompiler.Special_Character.has(this.#Now())) {
                 ++this.#index;
             }
-            return this.weber_code.substring(start,this.#index-1);
+            return this.weber_code.substring(start,this.#index);
         })();
-
         //띄어쓰기는 모두 스킵
-        while(this.#Now() != " ") {
-            this.#index++;
-        }
+        this.#SkipSpace();
         //만약 쌍점이라면, 간결한 태그 생성
         if (this.#Now() == ":") {
-            //빠르게 태그 만들고 끝
+            this.#index++;
             return new Tag(name,this.#Text());
         }
         //중괄호라면, 일단 태그는 맞음 와 귀차나..
+        // (나중에 구현하자...)
+        
+        // 그것도 아니라면, 아마 속성임. 그냥 있는 그대로 가져오자
+        return new Property(name,this.#ReadLine());
     }
     /** 텍스트 읽기 */
     #Text() : string {
-        while(this.#Now() != " ") {
-            this.#index++;
-        }
+        this.#SkipSpace();
         let text = "";
         const open = this.#Now();
         //큰따옴표, 작은따옴표 둘다 아니라면... 뭐냐?
@@ -77,10 +80,28 @@ class WeberCompiler {
         //끝
         return text;
     }
-    #Error(message) : string {
+    /**다음 줄바꿈까지 그대로 읽기 */
+    #ReadLine() : string {
+        let start = this.#index;
+        while(this.#Now() != "\n") {
+             this.#index++;
+        }
+        //줄바꿈과 마주쳤다면, 이제 끝
+        return this.weber_code.substring(start,this.#index++-1);
+    }
+    /**오류 메시지 */
+    #Error(message:string) : string {
         return `Weber Error. (${this.#index}번째 글자) ${message}`;
     }
-
+    #SkipSpace() {
+        while(this.#Now() == " ") this.#index++;
+    }
+    /**테스트 */
+    Test() {
+        console.log(this.#Parser());
+    }
+    /**존재하는 특수문자 */
+    static Special_Character = new Set(Array.from("\n!@#$%^&*()_+\\-=[]{};':\"|,.<>/?'"));
     /** 존재하는 HTML 태그 목록 <태그명, 콘텐츠 포함 여부> */
     static HTML_Tag = new Map<string,boolean>([
         ["h1",true], ["h2",true], ["h3",true], ["h4",true], ["h5",true], ["h6",true],
@@ -88,6 +109,7 @@ class WeberCompiler {
         ["body",true], ["head",true],
         ["br",false], ["img",false]
     ]);
+    /**존재하는 Style 태그 목록 */
     static Style_Option = new Map<string,boolean>([
 
     ]);
@@ -155,9 +177,9 @@ class Style extends Property {
 }
 /**HTML 태그 (h1,p,div 등) */
 class Tag extends Property {
-    Propertys:Property[];
-    Styles:Style[];
-    Javascript:string[];
+    Propertys:Property[] = [];
+    Styles:Style[] = [];
+    Javascript:string[] = [];
     Event = new Map<string,string[]>();
     Id:string|null = null;
     
@@ -182,4 +204,5 @@ class Tag extends Property {
 
 
 //테스트
-console.log(Weber.Compile("test.txt"));
+let test = new WeberCompiler("h4: 'hello\\n world!'\n");
+test.Test();
