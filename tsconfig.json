@@ -5,7 +5,10 @@
         "noImplicitAny": true,
         "strictNullChecks": true,
         "strict": true,
-        "esModuleInterop": true
+        "esModuleInterop": true,
+
+        "noImplicitReturns": true,
+        "strictPropertyInitialization": true,
     },
     "include": [
         "weber.ts"

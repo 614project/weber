@@ -1,7 +1,12 @@
 import { readFileSync } from "fs";
-import { arrayBuffer } from "stream/consumers";
 
+/**Weber와 관련된 모든 기능이 포함되어 있습니다. */
 class Weber {
+    /**
+     * weber 코드를 HTML 문법으로 변환합니다.
+     * @param path 컴파일할 weber 코드
+     * @returns 컴파일된 HTML 코드
+     */
     static Compile(path:string):string {
         let compiler = new WeberCompiler(readFileSync(path).toString());
         return compiler.Run();
@@ -93,6 +98,7 @@ class WeberCompiler {
     #Error(message:string) : string {
         return `Weber Error. (${this.#index}번째 글자) ${message}`;
     }
+    /**다음 공백까지 건너뛰기 */
     #SkipSpace() {
         while(this.#Now() == " ") this.#index++;
     }
@@ -100,8 +106,9 @@ class WeberCompiler {
     Test() {
         console.log(this.#Parser());
     }
-    /**존재하는 특수문자 */
-    static Special_Character = new Set(Array.from("\n!@#$%^&*()_+\\-=[]{};':\"|,.<>/?'"));
+    /**존재하는 특수문자*/
+    //(뺄셈과 언더바는 제외, font-size 등의 이유)
+    static Special_Character = new Set(Array.from("\n!@#$%^&*()+\\=[]{};'`:\"'|,.<>/?"));
     /** 존재하는 HTML 태그 목록 <태그명, 콘텐츠 포함 여부> */
     static HTML_Tag = new Map<string,boolean>([
         ["h1",true], ["h2",true], ["h3",true], ["h4",true], ["h5",true], ["h6",true],
@@ -109,10 +116,21 @@ class WeberCompiler {
         ["body",true], ["head",true],
         ["br",false], ["img",false]
     ]);
-    /**존재하는 Style 태그 목록 */
-    static Style_Option = new Map<string,boolean>([
-
-    ]);
+    /**존재하는 css 태그 목록 */
+    static Style_Option = (():Map<string,boolean> => {
+        let map = new Map<string,boolean>();
+        [
+            "align-content",
+            "align-items",
+            "align-self",
+            "all",
+            "animation",
+            "animation-delay",
+        ].forEach(v => {
+            map.set(v,true);
+        });
+        return map;
+    })();
 }
 
 /**콘텐츠 관리자 */
