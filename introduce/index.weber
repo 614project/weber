@@ -49,7 +49,12 @@ style {
     }
 
     * { box-sizing border-box }
-    html { scroll-behavior smooth; scroll-padding-top 72px }
+    html {
+        scroll-behavior smooth
+        scroll-padding-top 72px
+        -webkit-text-size-adjust 100%
+        text-size-adjust 100%
+    }
     body {
         margin 0
         background var(--bg)
@@ -58,8 +63,15 @@ style {
         line-height 1.6
         word-break keep-all
         -webkit-font-smoothing antialiased
+        -webkit-tap-highlight-color transparent
     }
-    .wrap { max-width 1080px; margin 0 auto; padding 0 20px }
+    // 좌우 여백만 지정합니다. (.block 의 위아래 여백과 겹치지 않도록)
+    .wrap {
+        max-width 1080px
+        margin 0 auto
+        padding-left max(20px, env(safe-area-inset-left))
+        padding-right max(20px, env(safe-area-inset-right))
+    }
 
     header.site {
         position sticky
@@ -91,8 +103,11 @@ style {
                 &[aria-current=page] { color var(--accent); font-weight 600 }
             }
             @media (max-width: 560px) {
-                gap 14px
+                gap 6px
+                margin-right -8px
                 .section-link { display none }
+                // 손가락으로 누르기 쉽게 터치 영역을 44px 로
+                a { display inline-flex; align-items center; min-height 44px; padding 0 8px }
             }
         }
     }
@@ -122,6 +137,8 @@ style {
         color var(--code-ink)
         font 14px/1.65 var(--mono)
         tab-size 4
+        -webkit-overflow-scrolling touch
+        @media (max-width: 560px) { padding 14px 16px; font-size 12.5px; border-radius 12px }
         &[data-label]::before {
             content attr(data-label)
             display block
@@ -172,7 +189,14 @@ style {
         padding-top 88px
         padding-bottom 64px
         @media (max-width: 880px) { grid-template-columns 1fr; gap 36px; padding-top 48px }
-        h1 { margin 20px 0; font-size clamp(40px, 6vw, 64px); line-height 1.12; letter-spacing -0.025em }
+        @media (max-width: 560px) { gap 32px; padding-top 36px; padding-bottom 16px }
+        h1 {
+            margin 20px 0
+            font-size clamp(40px, 6vw, 64px)
+            line-height 1.12
+            letter-spacing -0.025em
+            @media (max-width: 560px) { margin 16px 0 14px; font-size 42px }
+        }
     }
     .eyebrow {
         display inline-block
@@ -183,9 +207,25 @@ style {
         color var(--accent)
         font-size 14px
         font-weight 600
+        @media (max-width: 560px) { font-size 13px }
     }
-    .lead { max-width 34em; margin 0 0 32px; color var(--muted); font-size 18px }
-    .actions { display flex; flex-wrap wrap; gap 12px }
+    .lead {
+        max-width 34em
+        margin 0 0 32px
+        color var(--muted)
+        font-size 18px
+        @media (max-width: 560px) { margin-bottom 24px; font-size 16.5px; line-height 1.7 }
+    }
+    .actions {
+        display flex
+        flex-wrap wrap
+        gap 12px
+        // 모바일에서는 두 버튼을 같은 폭으로 쌓습니다.
+        @media (max-width: 560px) {
+            gap 10px
+            .btn { flex 1 1 100%; justify-content center; padding 14px 18px }
+        }
+    }
 
     figure.window {
         margin 0
@@ -203,20 +243,38 @@ style {
         pre.code { border-radius 0; background transparent }
         figcaption { padding 14px 20px; border-top 1px solid var(--code-line) }
         iframe { display block; width 100%; height 170px; border 0; background white }
+        @media (max-width: 560px) {
+            margin 0 -12px
+            border-radius 16px
+            box-shadow 0 18px 40px rgb(50 20 140 / 22%)
+            .bar { padding 12px 16px }
+            figcaption { padding 12px 16px }
+            iframe { height 160px }
+        }
     }
 
-    .block { padding 72px 0 }
+    .block {
+        padding-top 72px
+        padding-bottom 72px
+        @media (max-width: 560px) { padding-top 44px; padding-bottom 44px }
+    }
     .section-head {
         max-width 660px
         margin-bottom 32px
         h2 { margin 0 0 8px; font-size 32px; letter-spacing -0.015em }
         p { margin 0; color var(--muted) }
+        @media (max-width: 560px) {
+            margin-bottom 22px
+            h2 { font-size 26px }
+            p { font-size 15px }
+        }
     }
     .compare, .pair, .start {
         display grid
         grid-template-columns 1fr 1fr
         gap 16px
         @media (max-width: 880px) { grid-template-columns 1fr }
+        @media (max-width: 560px) { gap 10px }
     }
     // 긴 코드 줄이 그리드 칸을 넓히지 않도록
     .hero, .compare, .pair, .start {
@@ -227,6 +285,7 @@ style {
         display grid
         grid-template-columns repeat(3, 1fr)
         gap 16px
+        @media (max-width: 560px) { gap 10px }
         @media (max-width: 880px) { grid-template-columns 1fr 1fr }
         @media (max-width: 560px) { grid-template-columns 1fr }
     }
@@ -237,6 +296,17 @@ style {
         background var(--surface)
         h3 { margin 16px 0 6px; font-size 18px }
         p { margin 0; color var(--muted); font-size 15px }
+        @media (max-width: 560px) {
+            display grid
+            grid-template-columns 52px 1fr
+            column-gap 14px
+            align-items start
+            padding 18px
+            border-radius 14px
+            .glyph { grid-row span 2; width 52px; min-width 0; padding 0; font-size 12px }
+            h3 { margin 2px 0 4px; font-size 16.5px }
+            p { font-size 14.5px; line-height 1.6 }
+        }
     }
     .glyph {
         display inline-grid
@@ -250,10 +320,18 @@ style {
         font 700 15px var(--mono)
     }
 
-    .samples { display grid; gap 40px }
+    .samples {
+        display grid
+        gap 40px
+        @media (max-width: 560px) { gap 36px }
+    }
     .sample {
         h3 { margin 0 0 4px; font-size 20px }
         p { margin 0 0 14px; color var(--muted) }
+        @media (max-width: 560px) {
+            h3 { font-size 18px }
+            p { margin-bottom 12px; font-size 15px }
+        }
         pre:empty { display none }
         .open {
             display inline-block
@@ -268,6 +346,12 @@ style {
     .start {
         h3 { margin 0 0 10px; font-size 17px }
         pre + h3 { margin-top 20px }
+        // 모바일: 단계 사이를 띄우고, 긴 명령은 줄바꿈해서 다 보이게
+        @media (max-width: 560px) {
+            gap 28px
+            h3 { font-size 16px }
+            pre.code { font-size 12px; white-space pre-wrap; overflow-wrap break-word }
+        }
     }
 
     footer.site {
@@ -278,6 +362,12 @@ style {
         font-size 14px
         .wrap { display flex; flex-wrap wrap; justify-content space-between; gap 8px 24px }
         a { color var(--accent) }
+        @media (max-width: 560px) {
+            margin-top 8px
+            padding 24px 0 max(32px, env(safe-area-inset-bottom))
+            font-size 13px
+            .wrap { flex-direction column; gap 6px }
+        }
     }
 }
 
@@ -530,7 +620,7 @@ main {
                 h3: "1. 설치"
                 pre.code {
                     `
-                    git clone https://github.com/614project/weber.git
+                    git clone https://github.com/614project/weber
                     cd weber
                     npm install
                     npm link
