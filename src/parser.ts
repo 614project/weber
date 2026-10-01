@@ -104,6 +104,12 @@ class Parser {
     }
   }
 
+  /** end 앞의 공백을 뺀 위치 (start 보다 앞으로 가지 않음) */
+  trimmedEnd(start: number, end: number): number {
+    while (end > start && isWhitespace(this.s[end - 1])) end--;
+    return end;
+  }
+
   /** 한 문장이 끝났는지 확인합니다. (줄바꿈, `;`, `}`, 파일 끝) */
   expectEndOfStatement(): void {
     for (;;) {
@@ -171,6 +177,7 @@ class Parser {
     if (key && !VALID_KEY.test(key)) this.error(`'${key}'은(는) 올바른 키 이름이 아닙니다.`, start);
     const selector = this.parseSelectorParts();
     if (!key && !selector) this.error('키 이름이 필요합니다.', start);
+    const keySpan = { start, end: this.i };
 
     this.skipSpaces();
     let colon = false;
@@ -205,7 +212,7 @@ class Parser {
         body = this.parseBody(mode);
       }
     }
-    return { type: 'entry', key, selector, colon, value, body, span: { start, end: this.i } };
+    return { type: 'entry', key, keySpan, selector, colon, value, body, span: { start, end: this.i } };
   }
 
   /** `.class`, `#id`, `[attr=value]` 축약 */
@@ -352,10 +359,11 @@ class Parser {
       this.error('`{`가 필요합니다. `:`, `&`, `@`로 시작하는 문장은 CSS 규칙 블록이어야 합니다.', start);
     }
     const open = this.i;
+    const preludeSpan = { start, end: this.trimmedEnd(start, open) };
     this.i++;
     const items = this.parseCssItems(open);
     this.i++;
-    return { type: 'css-rule', prelude: normalizePrelude(text), items, span: { start, end: this.i } };
+    return { type: 'css-rule', prelude: normalizePrelude(text), preludeSpan, items, span: { start, end: this.i } };
   }
 
   // ───────────────────────── CSS ─────────────────────────
@@ -390,12 +398,14 @@ class Parser {
       if (stop === '{') {
         if (!prelude) this.error('`{` 앞에 선택자가 필요합니다.', start);
         const open = this.i;
+        const preludeSpan = { start, end: this.trimmedEnd(start, open) };
         this.i++;
         const children = this.parseCssItems(open);
         this.i++;
         items.push({
           type: 'block',
           prelude: normalizePrelude(prelude),
+          preludeSpan,
           items: children,
           span: { start, end: this.i },
         });

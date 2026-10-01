@@ -3,4 +3,5 @@
 node_modules
 test
 dist
+_site
 examples/*.html

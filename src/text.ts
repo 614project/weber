@@ -13,7 +13,11 @@ export function readQuoted(text: string, start: number): QuotedResult {
   let i = start + 1;
   while (i < text.length) {
     const c = text[i];
-    if (c === quote) return { value, end: i + 1 };
+    if (c === quote) {
+      // 여는 백틱 바로 뒤가 줄바꿈이면 "블록 문자열": 공통 들여쓰기를 제거합니다.
+      if (quote === '`' && text[start + 1] === '\n') value = trimBlockString(value);
+      return { value, end: i + 1 };
+    }
     if (c === '\n' && quote !== '`') {
       return { error: '문자열이 닫히지 않았습니다. 여러 줄 텍스트는 백틱(`)으로 감싸세요.', at: start };
     }
@@ -61,6 +65,24 @@ export function readQuoted(text: string, start: number): QuotedResult {
     error: quote === '`' ? '백틱 문자열이 닫히지 않았습니다.' : '문자열이 닫히지 않았습니다.',
     at: start,
   };
+}
+
+/**
+ * 블록 문자열 정리: 첫 줄바꿈과, 닫는 백틱만 있는 마지막 줄을 지우고 공통 들여쓰기를 제거합니다.
+ *
+ *     pre {
+ *         `
+ *         첫 줄
+ *             들여쓴 줄
+ *         `
+ *     }
+ */
+function trimBlockString(value: string): string {
+  const lines = value.split('\n').slice(1);
+  if (lines.length && lines[lines.length - 1].trim() === '') lines.pop();
+  const indents = lines.filter((line) => line.trim()).map((line) => /^[ \t]*/.exec(line)![0].length);
+  const cut = indents.length ? Math.min(...indents) : 0;
+  return lines.map((line) => (line.trim() ? line.slice(cut) : '')).join('\n');
 }
 
 /** 값 전체가 따옴표 문자열 하나라면 그 내용을, 아니면 null 을 돌려줍니다. */

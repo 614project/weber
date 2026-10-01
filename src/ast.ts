@@ -18,6 +18,8 @@ export interface EntryNode {
   type: 'entry';
   /** 키 이름. `.card { }` 처럼 태그를 생략하면 빈 문자열 */
   key: string;
+  /** 키와 선택자 축약이 차지하는 범위 */
+  keySpan: Span;
   /** `div.card#main[title=hi]` 처럼 키에 붙은 선택자 축약 */
   selector: SelectorParts | null;
   /** 키 뒤에 쌍점(:)이 있었는지 */
@@ -72,6 +74,8 @@ export interface CssBody {
 export interface CssRuleNode {
   type: 'css-rule';
   prelude: string;
+  /** 선택자(또는 at-규칙 머리)가 차지하는 범위 */
+  preludeSpan: Span;
   items: CssItem[];
   span: Span;
 }
@@ -92,6 +96,8 @@ export interface CssDeclaration {
 export interface CssBlock {
   type: 'block';
   prelude: string;
+  /** 선택자(또는 at-규칙 머리)가 차지하는 범위 */
+  preludeSpan: Span;
   items: CssItem[];
   span: Span;
 }

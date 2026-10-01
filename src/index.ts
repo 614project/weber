@@ -11,12 +11,12 @@ import type { Diagnostic } from './errors.js';
 import { parse as parseSource } from './parser.js';
 import { print } from './printer.js';
 import { Source } from './source.js';
-import { Transformer, type OutputMode } from './transform.js';
+import { Transformer, type Classification, type OutputMode } from './transform.js';
 
 export type * from './ast.js';
 export { classify, type Context, type Decision, type Namespace } from './classify.js';
 export { WeberError, type Diagnostic } from './errors.js';
-export type { OutputMode } from './transform.js';
+export type { Classification, ClassificationKind, OutputMode } from './transform.js';
 export { VERSION } from './version.js';
 
 export interface CompileOptions {
@@ -40,6 +40,8 @@ export interface CompileResult {
   /** 실제로 출력된 형태 */
   mode: 'document' | 'fragment';
   warnings: Diagnostic[];
+  /** 각 키를 무엇(요소/속성/CSS/JS)으로 판별했는지, 소스 순서대로 */
+  classifications: Classification[];
 }
 
 /**
@@ -53,7 +55,8 @@ export function compile(code: string, options: CompileOptions = {}): CompileResu
   const doc = transformer.transform(nodes, options.mode ?? 'auto');
   const indent = typeof options.indent === 'string' ? options.indent : ' '.repeat(options.indent ?? 2);
   const html = print(doc, { indent, minify: options.minify ?? false });
-  return { html, mode: doc.kind, warnings: transformer.warnings };
+  const classifications = [...transformer.classifications].sort((a, b) => a.start - b.start);
+  return { html, mode: doc.kind, warnings: transformer.warnings, classifications };
 }
 
 /** weber 코드를 구문 트리로 바꿉니다. (도구 제작용) */

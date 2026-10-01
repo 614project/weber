@@ -2,7 +2,7 @@
  * 변환기: 구문 트리를 HTML 요소 트리로 바꿉니다.
  * 각 문장이 무엇인지(요소/속성/스타일/이벤트) 판별해서 알맞은 곳에 붙입니다.
  */
-import type { CodeBody, CssItem, CssRuleNode, EntryNode, SelectorParts, WeberNode } from './ast.js';
+import type { CodeBody, CssItem, CssRuleNode, EntryNode, SelectorParts, Span, WeberNode } from './ast.js';
 import {
   classify,
   isCssProperty,
@@ -87,8 +87,21 @@ export function element(tag: string, ns: Namespace = 'html'): HElement {
   return { type: 'element', tag, ns, attributes: new Map(), classes: [], styles: [], children: [] };
 }
 
+/** 각 키를 무엇으로 판별했는지: HTML 요소, HTML 속성, CSS, 자바스크립트 */
+export type ClassificationKind = 'element' | 'attribute' | 'css' | 'js';
+
+export interface Classification {
+  /** 소스에 적힌 키 (선택자 축약 포함) */
+  key: string;
+  kind: ClassificationKind;
+  /** 키가 소스에서 차지하는 범위 (줄바꿈을 \n 으로 통일하고 BOM 을 뺀 소스 기준 오프셋) */
+  start: number;
+  end: number;
+}
+
 export class Transformer implements CssReporter {
   readonly warnings: Diagnostic[] = [];
+  readonly classifications: Classification[] = [];
   readonly #source: Source;
   readonly #scopedCss: CssOutput[] = [];
   readonly #rules = new Map<HElement, CssRuleNode[]>();
@@ -168,6 +181,7 @@ export class Transformer implements CssReporter {
         const key = node.key.toLowerCase();
         if (key === 'html' || key === 'head' || key === 'body') {
           const target = key === 'html' ? html : key === 'head' ? head : body;
+          this.#record(node.keySpan, 'element');
           this.#applySelector(target, node.selector, node.span.start);
           if (node.value) {
             if (key !== 'body') this.error(`'${node.key}'에는 값을 쓸 수 없습니다.`, node.value.span.start);
@@ -199,11 +213,41 @@ export class Transformer implements CssReporter {
 
   #evaluate(node: WeberNode, ctx: Context): Effect {
     if (node.type === 'text') return { type: 'child', node: { type: 'text', value: node.value } };
-    if (node.type === 'css-rule') return { type: 'rule', rule: node };
+    if (node.type === 'css-rule') {
+      this.#record(node.preludeSpan, 'css');
+      this.#recordCss(node.items);
+      return { type: 'rule', rule: node };
+    }
     return this.#evaluateEntry(node, ctx);
   }
 
   #evaluateEntry(entry: EntryNode, ctx: Context): Effect {
+    const effect = this.#entryEffect(entry, ctx);
+    const lower = entry.key.toLowerCase();
+    if (lower === 'script' || isEventName(lower)) this.#record(entry.keySpan, 'js');
+    else if (lower === 'style' || effect?.type === 'style') this.#record(entry.keySpan, 'css');
+    else if (effect?.type === 'attribute') this.#record(entry.keySpan, 'attribute');
+    else if (effect?.type === 'child') this.#record(entry.keySpan, 'element');
+    return effect;
+  }
+
+  /** 키를 무엇으로 판별했는지 기록합니다. (편집기의 색칠 등에 쓰임) */
+  #record(span: Span, kind: ClassificationKind): void {
+    this.classifications.push({ key: this.#source.text.slice(span.start, span.end), kind, start: span.start, end: span.end });
+  }
+
+  /** CSS 블록 안의 속성 이름과 중첩 선택자를 기록합니다. */
+  #recordCss(items: CssItem[]): void {
+    for (const item of items) {
+      if (item.type === 'declaration') {
+        this.#record({ start: item.span.start, end: item.span.start + item.property.length }, 'css');
+      } else if (item.type === 'block') {
+        this.#recordCss(item.items);
+      }
+    }
+  }
+
+  #entryEffect(entry: EntryNode, ctx: Context): Effect {
     const key = entry.key;
     const lower = key.toLowerCase();
     const at = entry.span.start;
@@ -440,6 +484,7 @@ export class Transformer implements CssReporter {
       const el = element('style', ns);
       this.#applySelector(el, entry.selector, at);
       el.children.push({ type: 'css', rules: flattenCss(entry.body.items, null, this) });
+      this.#recordCss(entry.body.items);
       return { type: 'child', node: el };
     }
     const text = entry.value?.text.trim() ?? '';
@@ -491,6 +536,7 @@ export class Transformer implements CssReporter {
     const items: CssItem[] = rules.map((rule) => ({
       type: 'block',
       prelude: rule.prelude,
+      preludeSpan: rule.preludeSpan,
       items: rule.items,
       span: rule.span,
     }));

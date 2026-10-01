@@ -3,6 +3,8 @@
 HTML 파일로 컴파일되는, 간결한 문법의 웹 언어입니다.
 `key { ... }` 와 `key: value` 를 쌓아 올리기만 하면, 그것이 HTML 요소인지, CSS 인지, 자바스크립트인지는 weber 가 알아서 판별합니다.
 
+**[소개 사이트](https://614project.github.io/weber/)** · **[플레이그라운드](https://614project.github.io/weber/playground.html)** — 설치 없이 브라우저에서 바로 써 볼 수 있습니다.
+
 ```weber
 head {
     title: "weber"
@@ -127,6 +129,7 @@ const { html, warnings } = compile('body {\n  h1: "안녕"\n}', {
 ```
 
 문법 오류가 있으면 `WeberError` 를 던집니다. `line`, `column`, `frame`(오류 위치를 표시한 코드 조각) 속성이 있습니다.
+`classifications` 에는 각 키를 무엇(`element`, `attribute`, `css`, `js`)으로 판별했는지가 소스 위치와 함께 들어 있어, 편집기에서 색을 칠하는 데 쓸 수 있습니다.
 컴파일러 본체는 Node.js 전용 기능을 쓰지 않으므로 브라우저에서도 동작합니다.
 
 ## 문법
@@ -175,6 +178,23 @@ div {
 
 텍스트는 `"큰따옴표"` 나 `'작은따옴표'` 로 감쌉니다. `\n`, `\t`, `\"`, `\u{1F600}` 같은 이스케이프를 쓸 수 있고,
 여러 줄 텍스트는 `` `백틱` `` 으로 감쌉니다. 텍스트 안의 `<`, `>`, `&` 는 자동으로 이스케이프됩니다.
+
+여는 백틱 바로 뒤에서 줄을 바꾸면 **블록 문자열**이 되어, 첫 줄바꿈과 마지막 빈 줄, 공통 들여쓰기가 제거됩니다.
+코드 예제를 들여쓰기를 망가뜨리지 않고 담을 때 편리합니다.
+
+```weber
+pre {
+    `
+    첫 줄
+        들여쓴 줄
+    `
+}
+```
+
+```html
+<pre>첫 줄
+    들여쓴 줄</pre>
+```
 
 ### 주석
 
@@ -509,6 +529,20 @@ weber 오류: 문자열이 닫히지 않았습니다. 여러 줄 텍스트는 �
 
 [`examples`](examples) 폴더에 소개 페이지와 할 일 목록 예제가 있습니다. `npm run examples` 로 변환해 볼 수 있습니다.
 
+## 소개 사이트와 플레이그라운드
+
+[`introduce`](introduce) 폴더는 weber 로 만든 weber 소개 사이트입니다. 페이지는 `.weber` 로 쓰여 있고,
+플레이그라운드는 브라우저에서 weber 컴파일러를 그대로 불러와 입력할 때마다 변환합니다.
+편집기의 키 색깔은 컴파일러가 각 키를 무엇으로 판별했는지(`classifications`)를 그대로 보여 줍니다.
+
+```sh
+npm run site         # _site/ 로 빌드
+npm run site:serve   # 빌드 후 http://localhost:8080 에서 보기
+```
+
+`main` 브랜치에 올라오면 GitHub Actions(`.github/workflows/pages.yml`)가 테스트, 빌드 후 GitHub Pages 에 배포합니다.
+처음 한 번은 저장소의 **Settings → Pages → Build and deployment → Source** 를 **GitHub Actions** 로 바꿔야 합니다.
+
 ## 개발
 
 ```sh
@@ -527,6 +561,8 @@ npm test        # 테스트 (README 의 weber → html 예제도 실제로 변�
 | `src/js-scanner.ts` | 자바스크립트 블록의 끝 찾기 |
 | `src/data/` | HTML 요소·속성, CSS 속성 목록 |
 | `src/cli.ts` | 명령줄 도구 |
+| `introduce/` | weber 로 만든 소개 사이트와 플레이그라운드 |
+| `scripts/build-site.mjs` | 소개 사이트 빌드 (`_site/`) |
 
 ## 앞으로 할 일
 

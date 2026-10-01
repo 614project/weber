@@ -21,6 +21,8 @@
     "build": "tsc",
     "test": "tsc && node --test dist/tests/*.test.js",
     "examples": "tsc && node dist/src/cli.js examples",
+    "site": "tsc && node scripts/build-site.mjs",
+    "site:serve": "tsc && node scripts/build-site.mjs --serve",
     "prepare": "tsc"
   },
   "engines": {

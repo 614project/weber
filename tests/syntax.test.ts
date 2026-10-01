@@ -25,6 +25,11 @@ describe('기본 문법', () => {
     assert.equal(html('pre {\n  `line 1\n  line 2`\n}'), '<pre>line 1\n  line 2</pre>');
   });
 
+  test('여는 백틱 뒤에서 줄을 바꾸면 공통 들여쓰기를 제거합니다 (블록 문자열)', () => {
+    const code = 'div {\n  pre {\n    `\n    a {\n        b\n    }\n\n    `\n  }\n}';
+    assert.equal(html(code), '<div>\n  <pre>a {\n    b\n}\n</pre>\n</div>');
+  });
+
   test('세미콜론으로 한 줄에 여러 문장을 쓸 수 있습니다', () => {
     assert.equal(html('p { "a"; b: "b"; color red }'), '<p style="color: red">a<b>b</b></p>');
   });
@@ -101,6 +106,27 @@ describe('구문 트리', () => {
     assert.equal(node.value?.text, 'hi');
     assert.equal(node.value?.quoted, true);
     assert.equal(node.body?.type, 'nodes');
+  });
+});
+
+describe('판별 정보', () => {
+  test('compile() 은 각 키를 무엇으로 판별했는지 알려 줍니다', () => {
+    const code = 'a.btn {\n  href /\n  color red\n  onclick: go()\n  b: "x"\n  :hover { top 0 }\n}\nstyle { p { margin 0 } }';
+    const result = compile(code);
+    assert.deepEqual(
+      result.classifications.map((c) => [c.key, c.kind, code.slice(c.start, c.end)]),
+      [
+        ['a.btn', 'element', 'a.btn'],
+        ['href', 'attribute', 'href'],
+        ['color', 'css', 'color'],
+        ['onclick', 'js', 'onclick'],
+        ['b', 'element', 'b'],
+        [':hover', 'css', ':hover'],
+        ['top', 'css', 'top'],
+        ['style', 'css', 'style'],
+        ['margin', 'css', 'margin'],
+      ],
+    );
   });
 });
 
