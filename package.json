@@ -1,14 +1,38 @@
 {
   "name": "weber",
   "version": "1.0.0",
-  "description": "simple language for web. weber project.",
-  "main": "weber.js",
+  "description": "key { ... } 와 key: value 를 쌓아 웹을 만드는 언어. HTML/CSS/JS 를 알아서 판별해 HTML 로 변환합니다.",
+  "type": "module",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    }
+  },
+  "bin": {
+    "weber": "dist/src/cli.js"
+  },
+  "files": [
+    "dist/src"
+  ],
   "scripts": {
-    "one": "tsc && node weber.js"
+    "build": "tsc",
+    "test": "tsc && node --test dist/tests/*.test.js",
+    "examples": "tsc && node dist/src/cli.js examples",
+    "prepare": "tsc"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "repository": "git+https://github.com/614project/weber.git",
   "keywords": [
-    "complier"
+    "compiler",
+    "transpiler",
+    "html",
+    "css",
+    "language"
   ],
   "author": "614project",
   "license": "MIT",
@@ -16,12 +40,8 @@
     "url": "https://github.com/614project/weber/issues"
   },
   "homepage": "https://github.com/614project/weber#readme",
-  "dependencies": {
-    "fs": "^0.0.1-security",
-    "tsc": "^2.0.4"
-  },
   "devDependencies": {
-    "@types/node": "^20.14.2",
-    "typescript": "^5.4.5"
+    "@types/node": "^22.19.0",
+    "typescript": "^5.9.3"
   }
 }

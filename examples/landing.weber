@@ -1,0 +1,102 @@
+// weber 로 만든 소개 페이지
+// 최상위에 쓴 lang, title, viewport 는 알아서 <html> 과 <head> 로 들어갑니다.
+lang ko
+title: "weber — 쌓아 올리는 웹"
+viewport "width=device-width, initial-scale=1"
+description "key { } 와 key: value 만으로 웹을 만드는 언어"
+
+style {
+    :root {
+        --accent #6c5ce7
+        --ink #1e1e2e
+        --muted #6b6b80
+    }
+    * { box-sizing border-box }
+    body {
+        margin 0
+        font-family system-ui, -apple-system, "Noto Sans KR", sans-serif
+        color var(--ink)
+        background #f7f7fb
+    }
+    .card {
+        padding 1.5rem
+        border-radius 16px
+        background white
+        box-shadow 0 4px 24px rgb(0 0 0 / 6%)
+        transition transform .2s
+        h3 { margin 0 0 .5rem; color var(--accent) }
+        p { margin 0; color var(--muted); line-height 1.6 }
+        &:hover { transform translateY(-4px) }
+    }
+    code {
+        font-family ui-monospace, monospace
+        background #efeefe
+        padding .1em .35em
+        border-radius 4px
+    }
+}
+
+header.hero {
+    padding 5rem 1.5rem 4rem
+    text-align center
+    color white
+    background linear-gradient(135deg, #6c5ce7, #a29bfe)
+
+    svg {
+        width 72
+        height 72
+        viewBox "0 0 24 24"
+        fill currentColor
+        path: "M3 4h18v4H3zM5 10h14v4H5zM7 16h10v4H7z"
+    }
+    h1 {
+        "weber"
+        font-size 3.5rem
+        margin .5rem 0
+    }
+    p: "key { } 와 key: value 만 쌓아 올리면 웹페이지가 됩니다."
+    a.button[href="#features"] {
+        "시작하기"
+        display inline-block
+        margin-top 1.5rem
+        padding .75rem 1.75rem
+        border-radius 999px
+        background white
+        color var(--accent)
+        font-weight 700
+        text-decoration none
+        :hover { background #f1f0ff }
+    }
+}
+
+main#features {
+    display grid
+    grid-template-columns repeat(3, 1fr)
+    gap 1.25rem
+    max-width 960px
+    margin -2rem auto 3rem
+    padding 0 1.25rem
+    @media (max-width: 720px) {
+        grid-template-columns 1fr
+    }
+
+    section.card {
+        h3: "HTML"
+        p { code: "p: \"안녕\""; " 처럼 쓰면 요소가 됩니다." }
+    }
+    section.card {
+        h3: "CSS"
+        p { code: "color red"; " 처럼 쓰면 스타일이 됩니다." }
+    }
+    section.card {
+        h3: "JS"
+        p { code: "onclick { ... }"; " 은 이벤트, "; code: "script { ... }"; " 는 스크립트가 됩니다." }
+    }
+}
+
+footer {
+    text-align center
+    padding 2rem
+    color var(--muted)
+    "© 614project · weber"
+}

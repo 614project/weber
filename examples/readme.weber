@@ -1,0 +1,14 @@
+div {
+    class weber
+    font-size 1rem
+    p: "614project"
+    button {
+        "click me!"
+        onclick {
+            alert('hello')
+        }
+    }
+    script {
+        console.log("hello world!")
+    }
+}

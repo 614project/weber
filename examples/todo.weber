@@ -1,0 +1,65 @@
+// 할 일 목록 — 이벤트와 스크립트 예제
+lang ko
+title: "할 일 목록"
+
+style {
+    body {
+        font-family system-ui, sans-serif
+        background #f4f4f8
+        margin 0
+    }
+    li {
+        padding .75rem 1rem
+        background white
+        border-radius 8px
+        margin-bottom .5rem
+        cursor pointer
+        &.done {
+            color #aaa
+            text-decoration line-through
+        }
+    }
+}
+
+main {
+    max-width 420px
+    margin 3rem auto
+    padding 0 1rem
+
+    h1: "할 일"
+    form {
+        display flex
+        gap .5rem
+        margin-bottom 1rem
+
+        input#task[placeholder="할 일을 입력하세요"][required] {
+            flex 1
+            padding .6rem
+        }
+        button: "추가"
+
+        onsubmit {
+            event.preventDefault()
+            addTask(this.task.value)
+            this.reset()
+        }
+    }
+    ul#list {
+        padding 0
+        list-style none
+    }
+    p#empty: "아직 할 일이 없어요."
+}
+
+script {
+    const list = document.getElementById('list')
+    const empty = document.getElementById('empty')
+
+    function addTask(text) {
+        const li = document.createElement('li')
+        li.textContent = text
+        li.onclick = () => li.classList.toggle('done')
+        list.append(li)
+        empty.hidden = true
+    }
+}

@@ -1,19 +1,18 @@
 {
-    "compilerOptions": {
-        "target": "ESNext",
-        "module": "CommonJS",
-        "noImplicitAny": true,
-        "strictNullChecks": true,
-        "strict": true,
-        "esModuleInterop": true,
-
-        "noImplicitReturns": true,
-        "strictPropertyInitialization": true,
-    },
-    "include": [
-        "weber.ts"
-    ],
-    "exclude": [
-        "node_modules"
-    ]
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "types": ["node"],
+    "strict": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "declaration": true,
+    "sourceMap": true,
+    "rootDir": ".",
+    "outDir": "dist",
+    "skipLibCheck": true
+  },
+  "include": ["src", "tests"]
 }
