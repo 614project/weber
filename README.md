@@ -5,6 +5,8 @@ HTML 파일로 컴파일되는, 간결한 문법의 웹 언어입니다.
 
 **[소개 사이트](https://614project.github.io/weber/)** · **[플레이그라운드](https://614project.github.io/weber/playground.html)** — 설치 없이 브라우저에서 바로 써 볼 수 있습니다.
 
+**[언어 명세](docs/README.md)** — weber 가 무엇을 받아들이고 무엇을 내놓는지 정한 문서입니다.
+
 ```weber
 head {
     title: "weber"
@@ -548,7 +550,7 @@ npm run site:serve   # 빌드 후 http://localhost:8080 에서 보기
 ```sh
 npm install
 npm run build   # src → dist
-npm test        # 테스트 (README 의 weber → html 예제도 실제로 변환해서 비교합니다)
+npm test        # 테스트 (README 와 언어 명세의 weber → html 예제도 실제로 변환해서 비교합니다)
 ```
 
 | 파일 | 역할 |
@@ -563,9 +565,9 @@ npm test        # 테스트 (README 의 weber → html 예제도 실제로 변�
 | `src/cli.ts` | 명령줄 도구 |
 | `introduce/` | weber 로 만든 소개 사이트와 플레이그라운드 |
 | `scripts/build-site.mjs` | 소개 사이트 빌드 (`_site/`) |
+| `docs/` | 언어 명세 |
 
 ## 앞으로 할 일
 
-- 다른 `.weber` 파일 불러오기 (머리글·바닥글 재사용)
-- 반복되는 구조를 위한 컴포넌트
-- 편집기 문법 강조
+[언어 명세](docs/README.md)에는 아직 구현하지 않은 기능도 들어 있습니다. CSS 단위 추론, 들여쓰기 블록, 목록·링크 설탕, 변수와 컴포넌트, 파일 나누기 같은 것들입니다.
+구현할 순서는 [부록 C](docs/spec/appendix-c-status.md#c3-구현-순서-제안)에 있습니다. 그 밖에는 편집기 문법 강조를 계획하고 있습니다.
