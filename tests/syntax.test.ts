@@ -19,6 +19,8 @@ describe('기본 문법', () => {
 
   test('따옴표 없는 텍스트 안의 작은따옴표', () => {
     assert.equal(html("p: it's mine"), "<p>it's mine</p>");
+    assert.equal(html("div { p: it's; p: that's }"), "<div>\n  <p>it's</p>\n  <p>that's</p>\n</div>");
+    assert.equal(html("p: it's // don't"), "<p>it's</p>");
   });
 
   test('백틱 문자열은 여러 줄을 허용합니다', () => {
@@ -111,7 +113,7 @@ describe('구문 트리', () => {
 
 describe('판별 정보', () => {
   test('compile() 은 각 키를 무엇으로 판별했는지 알려 줍니다', () => {
-    const code = 'a.btn {\n  href /\n  color red\n  onclick: go()\n  b: "x"\n  :hover { top 0 }\n}\nstyle { p { margin 0 } }';
+    const code = 'a.btn {\n  href /\n  color red\n  onclick: go()\n  b: "x"\n  :hover { top 0 }\n}\nstyle { p { margin 0; &:hover { color red } } }';
     const result = compile(code);
     assert.deepEqual(
       result.classifications.map((c) => [c.key, c.kind, code.slice(c.start, c.end)]),
@@ -125,6 +127,8 @@ describe('판별 정보', () => {
         ['top', 'css', 'top'],
         ['style', 'css', 'style'],
         ['margin', 'css', 'margin'],
+        ['&:hover', 'css', '&:hover'],
+        ['color', 'css', 'color'],
       ],
     );
   });
@@ -192,5 +196,25 @@ describe('오류', () => {
 
   test('요소 안의 : 로 시작하는 문장은 블록이어야 합니다', () => {
     assert.match(error('div { :hover }').reason, /`\{`가 필요합니다/);
+  });
+
+  test('CSS 블록 안의 닫히지 않은 문자열', () => {
+    assert.match(error('style {\n  .a::before {\n    content: "hello\n  }\n}').reason, /문자열이 닫히지 않았습니다/);
+  });
+
+  test('JS 안의 닫히지 않은 문자열과 짝이 맞지 않는 괄호', () => {
+    assert.match(error('button { onclick: alert("hello }').reason, /닫히지 않은 괄호나 문자열/);
+    assert.match(error('button { onclick: alert(1 }').reason, /닫히지 않은 괄호나 문자열/);
+    assert.match(error('script { fn(1 }').reason, /블록이 닫히지 않았습니다/);
+  });
+
+  test('script 와 이벤트에 값과 블록을 함께 쓸 수 없습니다', () => {
+    assert.match(error('script: https://example.com/a.js { alert(1) }').reason, /script 에는 값과 블록을 함께 쓸 수 없습니다/);
+    assert.match(error('script: app.js\n{\n  alert(1)\n}').reason, /script 에는 값과 블록을 함께 쓸 수 없습니다/);
+    assert.match(error('button {\n  onclick: a()\n  {\n    b()\n  }\n}').reason, /이벤트 'onclick'에는 값과 블록을 함께 쓸 수 없습니다/);
+  });
+
+  test('이벤트에는 선택자 축약을 쓸 수 없습니다', () => {
+    assert.match(error('button { onclick.primary: go() }').reason, /선택자 축약을 쓸 수 없습니다/);
   });
 });

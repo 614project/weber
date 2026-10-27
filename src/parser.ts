@@ -272,18 +272,18 @@ class Parser {
   readValue(): ValueNode {
     const start = this.i;
     const s = this.s;
-    if ((s[start] === '"' || s[start] === "'") && findQuoteEnd(s, start) < 0) {
-      this.error('문자열이 닫히지 않았습니다. 여러 줄 텍스트는 백틱(`)으로 감싸세요.', start);
-    }
     let depth = 0;
     let raw = '';
     let segment = this.i;
     while (this.i < s.length) {
       const c = s[this.i];
       if (c === '\n') break;
-      if (c === '"' || c === "'") {
+      if (c === '"' || (c === "'" && !(this.i > start && /\w/.test(s[this.i - 1])))) {
         const end = findQuoteEnd(s, this.i);
-        this.i = end < 0 ? this.i + 1 : end + 1;
+        if (end < 0) {
+          this.error('문자열이 닫히지 않았습니다. 여러 줄 텍스트는 백틱(`)으로 감싸세요.', this.i);
+        }
+        this.i = end + 1;
         continue;
       }
       if (c === '`') {
@@ -316,7 +316,9 @@ class Parser {
     const r = scanJs(this.s, this.i, 'line');
     if (r.end < 0) this.error('코드가 끝나지 않았습니다. 닫히지 않은 괄호나 문자열이 있습니다.', start);
     this.i = r.end;
-    return this.makeValue(this.s.slice(start, r.end).trim(), start, r.end);
+    const raw = this.s.slice(start, r.end).trim();
+    const decoded = raw.startsWith('`') ? null : unquote(raw);
+    return { raw, text: decoded ?? raw, quoted: decoded !== null, span: { start, end: r.end } };
   }
 
   /** 값이 따옴표 문자열 하나라면 따옴표를 벗기고 이스케이프를 풉니다. */
@@ -452,7 +454,8 @@ class Parser {
       const c = s[this.i];
       if (c === '"' || c === "'") {
         const end = findQuoteEnd(s, this.i);
-        this.i = end < 0 ? this.i + 1 : end + 1;
+        if (end < 0) this.error('문자열이 닫히지 않았습니다.', this.i);
+        this.i = end + 1;
         continue;
       }
       if (c === '/' && s[this.i + 1] === '*') {

@@ -211,9 +211,15 @@ function startWatching(options: CliOptions, jobs: Job[]): void {
     if (isDirectory(input)) {
       watch(input, { recursive: true }, (_event, filename) => {
         if (!filename || !String(filename).endsWith('.weber')) return;
-        const file = path.join(input, String(filename));
-        const job = jobsFor(input, options, false).find((j) => path.resolve(j.input) === path.resolve(file));
-        if (job) schedule(job);
+        const rel = String(filename);
+        if (rel.split(path.sep).some((part) => part.startsWith('.') || part === 'node_modules')) return;
+        const file = path.join(input, rel);
+        const output = options.stdout
+          ? null
+          : options.out
+            ? path.join(options.out, toHtmlName(rel))
+            : toHtmlName(file);
+        schedule({ input: file, output });
       });
     } else {
       const dir = path.dirname(input);

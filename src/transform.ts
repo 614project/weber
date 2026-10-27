@@ -143,7 +143,12 @@ export class Transformer implements CssReporter {
       }
       root.children.push(effect.node);
     }
-    if (this.#scopedCss.length) root.children.unshift(this.#styleElement(this.#scopedCss));
+    for (const child of root.children) this.#collectScopedCss(child);
+    if (this.#scopedCss.length) {
+      const existing = this.#findMergeableStyle(root.children);
+      if (existing) existing.rules.push(...this.#scopedCss);
+      else root.children.unshift(this.#styleElement(this.#scopedCss));
+    }
     return { kind: 'fragment', nodes: root.children };
   }
 
@@ -152,7 +157,7 @@ export class Transformer implements CssReporter {
     const head = element('head');
     const body = element('body');
     this.#fillDocument(nodes, html, head, body);
-    for (const el of [html, head, body]) this.#finishRules(el);
+    for (const el of [html, head, body]) this.#collectScopedCss(el);
 
     const hasCharset = head.children.some(
       (n) => n.type === 'element' && n.tag === 'meta' && n.attributes.has('charset'),
@@ -242,6 +247,7 @@ export class Transformer implements CssReporter {
       if (item.type === 'declaration') {
         this.#record({ start: item.span.start, end: item.span.start + item.property.length }, 'css');
       } else if (item.type === 'block') {
+        if (/^[:&@]/.test(item.prelude)) this.#record(item.preludeSpan, 'css');
         this.#recordCss(item.items);
       }
     }
@@ -255,7 +261,10 @@ export class Transformer implements CssReporter {
     if (key === '') return { type: 'child', node: this.#element(entry, 'div', ctx) };
     if (lower === 'script') return { type: 'child', node: this.#script(entry, ctx) };
     if (lower === 'style') return this.#styleEntry(entry, ctx);
-    if (isEventName(lower)) return { type: 'attribute', name: key, value: this.#eventCode(entry) };
+    if (isEventName(lower)) {
+      if (entry.selector) this.error(`이벤트 '${key}'에는 선택자 축약을 쓸 수 없습니다.`, at);
+      return { type: 'attribute', name: key, value: this.#eventCode(entry) };
+    }
     if (entry.selector) return { type: 'child', node: this.#element(entry, key, ctx) };
 
     if (entry.body) {
@@ -350,7 +359,6 @@ export class Transformer implements CssReporter {
       if (entry.body.type !== 'nodes') this.error(`'${name}' 블록을 읽을 수 없습니다.`, entry.body.span.start);
       this.#fill(el, entry.body.nodes, { tag, ns });
     }
-    this.#finishRules(el);
     return el;
   }
 
@@ -426,6 +434,7 @@ export class Transformer implements CssReporter {
 
   #setAttribute(el: HElement, name: string, value: string | null, at: number): void {
     const lower = name.toLowerCase();
+    const attrName = el.ns === 'html' ? lower : el.ns === 'svg' ? svgAttributeName(name) : name;
     if (lower === 'class') {
       if (value !== null) this.#addClass(el, value);
       return;
@@ -440,15 +449,15 @@ export class Transformer implements CssReporter {
     if (el.ns === 'html' && BOOLEAN_ATTRIBUTES.has(lower) && value !== null) {
       const v = value.trim().toLowerCase();
       if (v === 'false') {
-        el.attributes.delete(name);
+        el.attributes.delete(attrName);
         return;
       }
       if (v === 'true' || v === '' || v === lower) value = null;
     }
-    if (el.attributes.has(name)) {
-      this.warn(`'${name}' 속성이 여러 번 지정되어 마지막 값을 사용합니다.`, at);
+    if (el.attributes.has(attrName)) {
+      this.warn(`'${attrName}' 속성이 여러 번 지정되어 마지막 값을 사용합니다.`, at);
     }
-    el.attributes.set(name, value);
+    el.attributes.set(attrName, value);
   }
 
   // ───────────────────────── script / style / 이벤트 ─────────────────────────
@@ -457,6 +466,7 @@ export class Transformer implements CssReporter {
     const el = element('script', ctx.ns === 'svg' ? 'svg' : 'html');
     this.#applySelector(el, entry.selector, entry.span.start);
     if (entry.body?.type === 'code') {
+      if (entry.value) this.error('script 에는 값과 블록을 함께 쓸 수 없습니다.', entry.span.start);
       const code = codeLines(entry.body);
       if (code.lines.length === 1 && /^src\s*[:\s]/.test(code.lines[0])) {
         this.warn(
@@ -504,12 +514,31 @@ export class Transformer implements CssReporter {
   }
 
   #eventCode(entry: EntryNode): string {
-    if (entry.body?.type === 'code') return codeLines(entry.body).lines.join('\n');
+    if (entry.body?.type === 'code') {
+      if (entry.value) this.error(`이벤트 '${entry.key}'에는 값과 블록을 함께 쓸 수 없습니다.`, entry.span.start);
+      return codeLines(entry.body).lines.join('\n');
+    }
     if (entry.value) return entry.value.text;
     return this.error(`이벤트 '${entry.key}'에 실행할 코드가 없습니다.`, entry.span.start);
   }
 
   // ───────────────────────── 요소 범위 CSS (:hover, @media) ─────────────────────────
+
+  #collectScopedCss(node: HNode): void {
+    if (node.type !== 'element') return;
+    this.#finishRules(node);
+    for (const child of node.children) this.#collectScopedCss(child);
+  }
+
+  #findMergeableStyle(nodes: HNode[]): HCss | undefined {
+    for (let i = nodes.length - 1; i >= 0; i--) {
+      const node = nodes[i];
+      if (node.type === 'element' && node.tag === 'style' && !node.attributes.size && node.children[0]?.type === 'css') {
+        return node.children[0];
+      }
+    }
+    return undefined;
+  }
 
   /** 요소 안에 쓴 `:hover { }` 같은 규칙을 전역 스타일시트로 옮깁니다. */
   #finishRules(el: HElement): void {
