@@ -198,9 +198,13 @@ class Parser {
     if (this.peek() === '{') {
       body = this.parseBody(mode);
     } else if (!this.atValueEnd()) {
-      // `script: https://...` 의 `//`를 주석으로 읽지 않도록, URL 은 일반 값으로 읽습니다.
-      const url = mode === 'code' && /^[a-z][a-z0-9+.-]*:\/\//i.test(this.s.slice(this.i, this.i + 40));
-      value = mode === 'code' && !url ? this.readCodeValue() : this.readValue();
+      // `script: https://...` 나 `script: app.js` 는 코드가 아니라 일반 값으로 읽습니다.
+      const externalScript =
+        key.toLowerCase() === 'script' &&
+        /^(?:[a-z][a-z0-9+.-]*:\/\/\S+|[^\s;{}()"'`]+\.[cm]?js(?:[?#][^\s;{}]*)?)\s*(?=$|[\n;{}]|\/\/|\/\*)/i.test(
+          this.s.slice(this.i),
+        );
+      value = mode === 'code' && !externalScript ? this.readCodeValue() : this.readValue();
       this.skipSpaces();
       if (this.peek() === '{') body = this.parseBody(mode);
     }

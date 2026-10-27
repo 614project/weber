@@ -212,7 +212,7 @@ function startWatching(options: CliOptions, jobs: Job[]): void {
       watch(input, { recursive: true }, (_event, filename) => {
         if (!filename || !String(filename).endsWith('.weber')) return;
         const rel = String(filename);
-        if (rel.split(path.sep).some((part) => part.startsWith('.') || part === 'node_modules')) return;
+        if (rel.split(/[/\\]/).some((part) => part.startsWith('.') || part === 'node_modules')) return;
         const file = path.join(input, rel);
         const output = options.stdout
           ? null

@@ -257,6 +257,7 @@ describe('자바스크립트', () => {
 
   test('script 값: 파일이나 URL 이면 src, 아니면 코드', () => {
     assert.equal(html('script: app.js'), '<script src="app.js"></script>');
+    assert.equal(html('script: a.js; script: b.js'), '<script src="a.js"></script>\n<script src="b.js"></script>');
     assert.equal(html('script: https://unpkg.com/htmx.org@2'), '<script src="https://unpkg.com/htmx.org@2"></script>');
     assert.equal(html('script[type=module]: ./main.mjs'), '<script type="module" src="./main.mjs"></script>');
     assert.equal(html('script: alert(1); alert(2)'), '<script>\n  alert(1); alert(2)\n</script>');

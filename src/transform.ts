@@ -558,7 +558,7 @@ export class Transformer implements CssReporter {
     // 이 요소에 직접 쓴 스타일도 같은 선택자의 규칙으로 옮깁니다.
     if (el.styles.length) {
       const declarations = el.styles.flatMap((style) => ('raw' in style ? parseDeclarations(style.raw) : [style]));
-      this.#scopedCss.push({ type: 'rule', selector, declarations });
+      if (declarations.length) this.#scopedCss.push({ type: 'rule', selector, declarations });
       el.styles = [];
       el.attributes.delete('style');
     }

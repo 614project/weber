@@ -210,6 +210,7 @@ describe('오류', () => {
 
   test('script 와 이벤트에 값과 블록을 함께 쓸 수 없습니다', () => {
     assert.match(error('script: https://example.com/a.js { alert(1) }').reason, /script 에는 값과 블록을 함께 쓸 수 없습니다/);
+    assert.match(error('script: app.js { alert(1) }').reason, /script 에는 값과 블록을 함께 쓸 수 없습니다/);
     assert.match(error('script: app.js\n{\n  alert(1)\n}').reason, /script 에는 값과 블록을 함께 쓸 수 없습니다/);
     assert.match(error('button {\n  onclick: a()\n  {\n    b()\n  }\n}').reason, /이벤트 'onclick'에는 값과 블록을 함께 쓸 수 없습니다/);
   });

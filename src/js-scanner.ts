@@ -131,6 +131,7 @@ export function scanJs(s: string, start: number, mode: 'block' | 'line'): JsScan
         while (j < n && s[j] !== '\n') {
           const d = s[j];
           if (d === '\\') {
+            if (s[j + 1] === '\n') break;
             j += 2;
             continue;
           }
