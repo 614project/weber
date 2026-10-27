@@ -96,9 +96,19 @@ export function scanJs(s: string, start: number, mode: 'block' | 'line'): JsScan
         }
         i++;
       }
-      if (s[i] === c) i++;
+      if (s[i] !== c) return fail();
+      i++;
       last = 'a';
       lastWord = '';
+      continue;
+    }
+
+    // 증감 연산자 (뒤에 오는 `/`는 정규식이 아니라 나눗셈)
+    if ((c === '+' || c === '-') && s[i + 1] === c) {
+      if (last === 'a' || last === ')' || last === ']') last = 'a';
+      else last = c;
+      lastWord = '';
+      i += 2;
       continue;
     }
 
@@ -121,6 +131,7 @@ export function scanJs(s: string, start: number, mode: 'block' | 'line'): JsScan
         while (j < n && s[j] !== '\n') {
           const d = s[j];
           if (d === '\\') {
+            if (s[j + 1] === '\n') break;
             j += 2;
             continue;
           }
@@ -157,11 +168,11 @@ export function scanJs(s: string, start: number, mode: 'block' | 'line'): JsScan
     if (c === '}' || c === ')' || c === ']') {
       if (stack.length === 0) {
         if (c === '}') return { end: i, verbatimLines };
-        i++;
-        last = c;
-        continue;
+        return fail();
       }
       const top = stack.pop();
+      const expected = c === ')' ? '(' : c === ']' ? '[' : top === '${' ? '${' : '{';
+      if (top !== expected) return fail();
       i++;
       if (top === '${') {
         const r = template();

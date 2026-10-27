@@ -189,6 +189,22 @@ describe('요소 안의 CSS 규칙 (:hover, @media)', () => {
       '<!DOCTYPE html><html><head><meta charset="utf-8"><style>body:hover{color:red}</style></head><body></body></html>',
     );
   });
+
+  test('부모와 자식 모두 규칙이 있으면 바깥 요소부터 순서대로 출력합니다', () => {
+    const out = html('div { :hover { color blue }; button { :hover { color red } } }', { minify: true });
+    assert.equal(
+      out,
+      '<style>.weber-1:hover{color:blue}.weber-2:hover{color:red}</style><div class="weber-1"><button class="weber-2"></button></div>',
+    );
+  });
+
+  test('조각 모드에서도 기존 style 블록이 있으면 그 뒤에 이어 붙입니다', () => {
+    const out = html('style { button { color gray } }\nbutton { color blue; :hover { color navy } }', { minify: true });
+    assert.equal(
+      out,
+      '<style>button{color:gray}.weber-1{color:blue}.weber-1:hover{color:navy}</style><button class="weber-1"></button>',
+    );
+  });
 });
 
 describe('자바스크립트', () => {
@@ -241,6 +257,7 @@ describe('자바스크립트', () => {
 
   test('script 값: 파일이나 URL 이면 src, 아니면 코드', () => {
     assert.equal(html('script: app.js'), '<script src="app.js"></script>');
+    assert.equal(html('script: a.js; script: b.js'), '<script src="a.js"></script>\n<script src="b.js"></script>');
     assert.equal(html('script: https://unpkg.com/htmx.org@2'), '<script src="https://unpkg.com/htmx.org@2"></script>');
     assert.equal(html('script[type=module]: ./main.mjs'), '<script type="module" src="./main.mjs"></script>');
     assert.equal(html('script: alert(1); alert(2)'), '<script>\n  alert(1); alert(2)\n</script>');
@@ -265,6 +282,14 @@ describe('자바스크립트', () => {
 
   test('이벤트의 한 줄 값은 세미콜론을 포함해 줄 끝까지입니다', () => {
     assert.equal(html('a { onclick: a(); b(); "텍스트" }'), '<a onclick=\'a(); b(); "텍스트"\'></a>');
+  });
+
+  test('증감 연산자 뒤의 나눗셈과 주석을 정규식으로 오인하지 않습니다', () => {
+    assert.equal(html('button { onclick: x = a++ / 2 } // 주석'), '<button onclick="x = a++ / 2"></button>');
+  });
+
+  test('한 줄 코드 값의 템플릿 리터럴은 백틱을 유지합니다', () => {
+    assert.equal(html('button { onclick: `hello ${name}` }'), '<button onclick="`hello ${name}`"></button>');
   });
 });
 

@@ -1,0 +1,63 @@
+# 버전 태그(v*) 푸시 또는 수동 실행 시 빌드·테스트를 거쳐 GitHub Release 를 배포합니다.
+name: 릴리즈
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '배포할 릴리즈 태그 (예: v1.0.0)'
+        required: false
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: 릴리즈 빌드 및 배포
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run site
+      - name: 배포 패키지 생성
+        run: |
+          npm pack
+          tar -czf weber-site.tar.gz -C _site .
+      - name: GitHub Release 배포
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            TAG="${{ github.ref_name }}"
+          else
+            TAG="${INPUT_TAG:-v1.0.0}"
+          fi
+          NOTES=$(cat <<'EOF'
+          `key { ... }` 와 `key: value` 를 쌓아 웹을 만드는 언어 **weber** 릴리즈입니다.
+
+          ### 주요 기능
+          - **간결한 문법과 자동 판별**: HTML 요소, 속성, CSS 스타일, JS 이벤트를 문맥과 값 형태에 따라 자동으로 판별해 HTML로 변환
+          - **CSS 중첩 및 요소 범위 스타일**: `style` 블록 내 Sass 식 중첩(`&`, `@media` 등) 펼치기 및 요소 내부 `:hover`, `@media` 자동 스코핑
+          - **자바스크립트 지원**: `on*` 인라인/블록 이벤트 및 `script` 블록·외부 스크립트 지원
+          - **문서 구조 자동 완성 및 SVG/MathML 지원**: `<!DOCTYPE html>`, `<head>`, `<body>`, `<meta charset="utf-8">` 자동 구성 및 SVG/MathML 네임스페이스 처리
+          - **CLI 및 웹 플레이그라운드**: 파일·폴더 변환, `--watch`, `--minify` 지원 및 브라우저에서 동작하는 소개 사이트·플레이그라운드 포함
+          EOF
+          )
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" weber-*.tgz weber-site.tar.gz --clobber
+          else
+            gh release create "$TAG" weber-*.tgz weber-site.tar.gz \
+              --title "weber $TAG" \
+              --notes "$NOTES" \
+              --generate-notes
+          fi

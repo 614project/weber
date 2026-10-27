@@ -118,6 +118,12 @@ describe('판별 결과 출력', () => {
   test('id 가 두 번이면 경고하고 마지막 값을 씁니다', () => {
     assert.equal(html('div { id a; id b }'), '<div id="b"></div>');
     assert.match(warnings('div { id a; id b }')[0], /여러 번/);
+    assert.equal(html('div { ID a; id b }'), '<div id="b"></div>');
+    assert.match(warnings('div { ID a; id b }')[0], /여러 번/);
+  });
+
+  test('HTML 속성은 대소문자를 구분하지 않고 처리합니다', () => {
+    assert.equal(html('input { DISABLED; disabled false }'), '<input>');
   });
 
   test('블록이 붙으면 항상 요소입니다', () => {
